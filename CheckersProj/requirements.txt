@@ -1,0 +1,5 @@
+# CSC111 Winter 2023 Final Project: Python libraries required for the smooth runnning of our program.
+
+# Graphics and data visualization
+pygame >= 2.3
+plotly >= 5.8, <5.9

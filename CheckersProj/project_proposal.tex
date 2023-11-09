@@ -1,0 +1,367 @@
+\documentclass[fontsize=11pt]{article}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage[margin=0.75in]{geometry}
+
+\title{CSC111 Final Project: \textbf{Check Your Move!}}
+\date{April 1, 2023}
+\author{Samarth Sharma, Lakshman Nair, Dimitrios Chlympatsos, Peter James}
+\begin{document}
+
+\maketitle
+
+
+
+\section*{Problem Description and Research Question}
+
+
+Checkers is a strategy board game played on a $8 \times 8$ board with each player having $12$ pieces, called "stones". The player moves one stone when it is their turn, and the stone can only move diagonally forward, or capture other pieces by "jumping" diagonally forward (in one move, there can be as many jumps as potential captures). Moreover, when the stone reaches the end of the opponent's side, which makes the stone a "king," it can also move diagonally backward (and, analogously, capture rival stones backwards, as well). The game ends when either one of the players loses all of their stones (the player with stones remaining wins) or when a player is left with no possible moves to make (where the player that still has possible moves to play wins).
+
+The main objective of this project is \textbf{to create artificially intelligent algorithms -\textit{based on decision tree recursion}- that can -on average- win against a random player for a \textit{modification} of Checkers} (this modification will be analyzed below). This objective also requires us to make an (object-oriented) implementation of the Checkers game (i.e. a Checkers interface), and also a visual component to display our results. Our motivation for this project stems from the second assignment, where we were guided to create intelligent algorithms to play "Wordle". The ability to create an algorithm that, throughout a whole game, performs better than a random player, piqued our interest and caused us to explore whether this is possible for other turn-based games or zero-sum board games in particular. During our research, we came across Checkers, a zero-sum game that is conceptually similar to Chess. But while Chess has a branching factor of 35 \footnote{This means that, on average, for any game state and for any turn, there are 35 possible moves a player can make.}, Checkers has a branching factor of 10 (Eppes, 2019). So, although not as complex as Chess, the number of possibilities grow exponentially with the number of moves played, making the task of determining effective algorithms challenging one, and one we were all excited to dive into.
+
+\textbf{Our Modification of Checkers}: For our project, we made two simplifying assumptions with regard to the rules of the game:
+\begin{enumerate}
+    \item There are no kings. Once a stone reaches the opposite side, it stays there and no longer moves. 
+
+    \item In the official Checkers Game, there is the possibility of consecutive captures wherein there are multiple opposing stones in the path of the player stone which allows it to capture multiple stones. We have made one modification to consecutive captures in our game which only allows for consecutive captures to take place in a "straight" diagonal line with no turns. An example of a valid consecutive capture is when a stone moves from (1,1) to (5,5), this is a valid move and stones at (2,2) and (4,4) are captured. 
+\end{enumerate}
+
+These simplifying assumptions slightly reduce the complexity of the design of the Checkers interface. We did this because our focus is not on making a perfect implementation of the Checkers game, but rather on designing intelligent algorithms (based on tree recursion) that play optimally (for the given game).
+
+Due to these simplifying assumptions, it is natural that the winning condition adapts to the modified rules. For our modification, a player A (playing against a player B) wins when one of the following is satisfied (these conditions are implemented in the \texttt{CheckersGame.get\_winner()} method, discussed in the Computational Overview section):
+\begin{enumerate}
+    \item \textit{B} has lost all of his stones.
+
+    \item \textit{A} has no possible moves and he has more stones on the board.
+
+    \item \textit{B} has no possible moves to make and \textit{A} has more stones on the board.
+\end{enumerate}
+
+
+\section*{Computational Overview}
+
+\subsection*{Checkers Implementation}
+
+First, we had to design and implement an interface that allowed playing a Checkers Game, and supplying all the necessary data and metadata about that game. Our interface consists of three classes. All these classes are located in the \texttt{structures.py} module.
+Although the in-code documentation of these classes is very thorough, information about them follows.
+
+
+\begin{enumerate}
+    \item \underline{\texttt{Stone}}: This class represents a particular piece in a game of Checkers. It has four instance attributes: \texttt{ID}, \texttt{state}, \texttt{position}, and \texttt{color}. Furthermore, it includes the methods \texttt{kill} (which changes the state of a piece from \texttt{True} to \texttt{False}) and \texttt{get\_poss\_moves}, which returns all possible moves that this particular stone can make given a game state. It also includes two private helper methods (since these are private, they are not part of the interface).
+
+    
+    \item \underline{\texttt{Move}}: This class represents a Move. It has two instance attributes: \texttt{stone\_to\_move} (which is the Stone object that this move relates to) and \texttt{new\_position} (a tuple for the new position of the stone). As such, a \texttt{Move} object \textit{uses-a} \texttt{Stone} object. Furthermore, this class includes the important method \texttt{positions\_captured}, which returns any positions that would be captured if this move were to take place \footnote{Here lies the reason for our second simplifying assumption (that capturing can only take place in a "straight line"). If we allowed for non-straight line consecutive captures, there would have been an ambiguity in the positions captured by a move. For example, if a stone moved from (2,2) to (2,6), this move could only take place if there were consecutive captures taking place but now there are two possibilities for which positions are captured, one is that there are stones at (3,3) and (3,5) and these are captured OR there are stones at (1,3) and (1,5) and these are the positions captured. These possibilities created a sense of ambiguity and uncertainity in our implementation thus leading us to making the simplifying assumption of only allowing "straight" line captures }.
+
+
+    
+    \item \underline{\texttt{CheckersGame}}: This is the "master" class of our interface, and represents the state of a Checkers game (in other words, it represents a Checkers game itself). In includes six instance attributes:
+    \begin{itemize}
+        \item \texttt{board}: This is a nested list (matrix) that represents the board on which the game is played. Any particular "cell" in this matrix stores either the \texttt{ID} of the \texttt{Stone} object that "occupies", or \texttt{-1} if it is unoccupied. The helper method \texttt{\_initialize\_stones\_and\_matrix} (existing in the \texttt{structures} module) is invoked to return a matrix (nested list) of stone IDs in their configuration at the beginning of a Checkers game.
+
+        \item \texttt{stones}: This is a dictionary with all the \texttt{Stone} objects in this game, mapping \texttt{ID} to the corresponding \texttt{Stone} object. As such, a \texttt{CheckersGame} object has a \texttt{Stone}, in a \textit{one-to-many} relationship.
+
+        \item \texttt{black\_history}: A list with all the moves that have taken place by the \textit{Black} player up to this point in the game, in chronological order. As such, a \texttt{CheckersGame} object also has a \texttt{Move}, in a one-to-many relationship.
+
+        \item \texttt{red\_history}: A list with all the moves that have taken place by the \textit{Red} player up to this point in the game, in chronological order.
+
+        \item \texttt{black\_survivors}: A set with all \texttt{ID}'s of black stones that are still alive.
+
+        \item \texttt{red\_survivors}: A set with all \texttt{ID}'s of red stones that are still alive.
+    \end{itemize}
+
+    Furthermore, this class has several crucial methods. Firstly, \texttt{record\_move} is a mutating method responsible for registering the occurrence of a move (represented with a \texttt{Move} object) by updating all instance attributes (i.e. CheckersGame.board, CheckersGame.stones, etc.) as required. Also, it contains a \texttt{get\_black\_moves} and a \texttt{get\_red\_moves} method that returns a list with all the possible moves that the black and red player can make given the current state of the game. Additionally, it includes a \texttt{\_copy} method that performs a \textbf{deep copy} on this \texttt{CheckersGame} object; this means that a new object for the container is created, new objects for the attributes of the container, for the attributes of the attributes, and so on. The result is that we fully avoid "mutation at distance", which would disastrous for the intelligent algorithms that will soon be described (that want to play out what would happen if a particular move was made, without actually making that move). The method \texttt{copy\_and\_record\_move} utilizes the \texttt{record\_move} and the \texttt{\_copy} methods.
+\newline
+\newline
+\newline
+\newline
+\newline    
+\newline
+Finally we have the \texttt{GameTree} class which is used for the \texttt{Aggressor} algorithm and for the \texttt{PrunelessMinimaxerwithTree} implementation.
+
+\newline
+\texttt{GameTree} class:
+
+\begin{center} Attributes \end{center}
+\begin{itemize}
+  \item \texttt{move: Move | str}. 
+  The move attribute is used to expand the GameTree by using record\_move and add\_subtree
+
+  \item \texttt{score: Optional[float]}.
+  This is the score attribute, used for the minimax algorithm.
+  
+  \item \texttt{\_subtrees: list[GameTree]}.
+  The possible moves that the black player can make. This should be updated every time the \texttt{record} methods are called.
+
+  \item \texttt{game: Optional[CheckersGame]}.
+  This attribute contains the game from which the gametree being initialized was constructed. It is optional, because while it is necessary for the Aggressive Algorithm, it is not needed for minimax.
+  
+\end{itemize}
+
+\begin{center} Methods \end{center}
+\begin{itemize}
+    \item add\_subtree: This method adds a new subtree to the current list of subtrees of a gametree.
+
+    \item get\_subtrees: This method returns a list of subtrees for a gametree. 
+    
+    \item getaggroscore: This method takes a game tree and a depth as arguments and recursively calculates a score for each move in the tree. The score represents the expected number of opponent pieces that the move will capture in the next sequence of moves, where the sequence is as long as the specified depth. For example, if the score for a move is 3, it means that the player expects to capture 3 opponent pieces in the next sequence of moves if they choose that initial move.
+
+    \item increasedepth: This method takes a game tree, and mutates it, increasing its depth by 1. It does this recursively, by finding leafnodes of a gametree, and replacing them with the same leafnodes, except with depth 1, instead of depth 0. This method allows us to optimize the makemove method for the Aggressive algorithm, as it is faster to take a subtree of a previous game, and extend it to the required depth, instead of initializating a whole new gametree.
+\end{itemize}
+\end{enumerate}
+
+
+
+\subsection*{Minimax Search Algorithm}
+Related Module: \texttt{minimax.py}
+
+\subsubsection*{Introducing Minimax}
+
+\textbf{Minimax} is an AI decision-making algorithm that is heavily used in game theory (Lazar, 2021). I will begin by explaining the main idea behind Minimax, and proceed with a more detailed explanation of how it makes a choice (in our context, a choice for which move to make).
+
+In zero-sum turn-based strategy games, "great" players are usually those who choose what move to make by looking forward many moves and taking into account how he can maximize his chance of winning, assuming his opponent plays logically. This is precisely the main idea behind the Minimax search algorithm.
+
+To understand how the Minimax algorithm works, we begin a decision tree, where each node represents a particular state (or a move that led to this state). The decision tree is at most as deep as a preset depth limit, and a leaf represents a node with either a winning/losing state, or a node that is at the maximum allowed depth.
+
+There are two agents (that could be viewed as two players); the \textit{Maximizer} and the \textit{Minimizer}. Note that all 
+nodes at depth $d$ of the tree represent possible $d$'th moves.
+
+Now, each node of these nodes needs to be assigned a score (this is the main part of the minimax), which happens as follows: if it is the Maximizer's turn (at the particular depth where the node is located), then he chooses the child (move) with the highest associated score, and this highest score is the score that will be assigned to the node itself. Similarly, if the player is the Minimizer, he chooses the child with the lowest score, and again this lowest score is the score that will be assigned to the node itself. 
+
+But notice: A Maximizer node selects the child node with the highest score, and each child node (which is a Minimizer) selects the child node with the lowest score, and each such child (which again represents a Maximizer) selects the child with the highest score, and so on. This means the process of score assignment is mutually recursive! 
+
+So what is the base case? The base case occurs when a node represents a winning/losing game, or when a certain depth has been reached (Checkers has a branching factor of 10 and each game consists of dozens of moves, so computing a complete tree is computationally infeasible). In that case, we use a utility function --formally called a static evaluation-- a function that takes the game state of a leaf and returns a score for that state. Once the terminal/leaf nodes have been evaluated, we start “moving up” in the tree and peeling off layers of the recursive call stack (until the root of our tree has a score) in the way described above, with the Maximizer choosing the child with the highest score and the minimizer choosing the child with the lowest score.
+
+Note that (unlike algorithms seen in A2), the Minimax algorithm creates and uses a new decision tree at every turn of the player that uses it.
+
+\subsubsection*{Implementation of Minimax}
+Our implementation of the Minimax algorithm relies on two methods that are mutually recursive (i.e. one calls the other until a base case is reached); a maximizer method and a minimizer method. We wrote three implementations of a Minimax player.
+
+\begin{enumerate}
+    \item \underline{\texttt{PrunelessMinimaxerWithTree}}:
+    This player uses the \texttt{maximize\_with\_tree} and \texttt{minimize\_with\_tree} functions (from the \texttt{minima.py} module), which recursively creates and assigns scores to a decision tree (a \texttt{GameTree} object) for a Checkers Game, and actually returns the produced tree with all the scores.
+
+    \item \underline{\texttt{PrunelessMinimaxer}}:
+    It turns out that actually creating a tree is not necessary, and the Minimax algorithm can still recurse down the possibilities (recurse down the hypothetical decision tree) and choose the best scores/moves without simultaneously building the tree. T
+    
+    Thus, this player uses the \texttt{maximize} and \texttt{minimize} functions (from the \texttt{minima.py} module), which perform the same job as the functions \texttt{maximize\_with\_tree} and \texttt{minimize\_with\_tree} but without actually creating and returning a new tree.
+
+    This leads to an observable improvement in efficiency, since there is no time and space spent on actually building and returning a tangible \texttt{GameTree}.
+
+    \item \underline{\texttt{PrunefulMinimaxer}}:
+    This is my "apex" player, which uses a modified version of Minimax, Minimax with alpha-beta pruning. 
+
+    In the same way you prune “bad” branches of a tree so the tree as a whole grows more using the same resources, pruning a search tree refers to fully ignoring (“cutting off”) subtrees that we are certain will not help the search; so we do not recurse on these pruned subtrees, thus significantly improving efficiency.
+    
+    In the context of the MiniMax search algorithm, to perform pruning, we add two more parameters to the MiniMax algorithm; alpha, which is the best score (best option) that the maximizer can  choose (with the information so far) down the path from the root to the node we are in now, and beta, which is the best score that the minimizer can choose in the path from the root to the node we are in now; assuming that both players play optimally. Note that if we are using the implementation under which we have two separate maximize and minimize functions, then, from our understanding, to perform pruning you again need to pass two additional parameters to each of these two functions, let’s say gamma, which is the best score the opponent can get (best can mean highest or lowest, depending on which function we are in), assuming they play optimally.
+
+    I implemented this method of "pruning" the game tree with the functions \texttt{maximize\_with\_pruning} and \texttt{minimize\_with\_pruning}.
+
+    Based on published research, on average, alpha-beta pruning allows the minimax algorithm to go almost twice as deep in the same amount of time. Therefore, this algorithm is the most efficient of all three, and because it is much faster, it can go deeper, so it can also perform much better.
+\end{enumerate}
+
+Note that the mutual recursion taking place with the \texttt{maximizer} and \texttt{minimizer} functions (and all their modifications) is an example of recursion that does not (and must not) mutate the accumulator; in this case, the accumulator is the \texttt{state} parameter (which is a \texttt{CheckersGame} object. The reason is that we want the algorithm to "look ahead" by seeing what would happen hypothetically if certain moves were made, but without actually making these moves (it would be completely wrong to mutate the gamestate).
+
+Furthermore, I have defined a utility function called \texttt{utility} (that serves as the "static evaluation function" for the Minimax algorithm) in the \texttt{minimax.py} module. After trying out a few different candidate functions, I ended up with this one, which seems to do be quite rational. Generally, a utility function is meant to return a score for a given state, where higher scores suggest this state is good for one player (in our case, the Black), and lower scores suggest the opposite (i.e. that the state is good for the Red). My implementation works as follows: if the passed state is a winning state for the black player, the function returns positive infinity; if it is a winning state for the red player, it returns negative infinity. If neither of these two is the case, it takes into account two other metrics:
+
+\begin{enumerate}
+    \item The signed difference between the number of black survivors and the number of red survivors.
+
+    \item The average distance of each black stone to the opposite side. I believed that the closer on average black stones are to the opposite side, the more likely they are to win the game in the end.
+\end{enumerate}
+
+
+
+
+
+
+ 
+\subsection*{Aggressive Algorithm (Simple)}
+The minimax algorithm is a well known algorithm that has been heavily investigated in the past. We decided to explore another Checkers algorithm that uses an entirely different strategy. We called this algorithm the "Aggressive Algorithm", because it's primary goal is to play moves which capture the most pieces. \newline
+
+First we created the SimpleAggressor algorithm which inherits the Player class. This Player is designed to make the most aggressive move that it can play next. This player is initialized with a color, and has one method: the play method. \newline
+
+The play method for the SimpleAggressor player takes into account the current state of the game and was implemented using the following method. Note: It has to be the players turn for this method to execute.
+First we calculate which moves are the most aggressive by getting a list of moves that the player can make next, and then filtering for the moves which capture the most pieces. If there are ties, we choose randomly from the set of most aggressive moves. The play method returns, with output being the chosen move. In this way, the player selects a move that results in the maximum reduction of the opponent's pieces in one turn. \newline
+
+Overall, this implementation of the "Aggressive Strategy" was simple, as it only looked one move ahead. Immediate flaws in this algorithm are evident, as it focuses on capturing enemy pieces even if it came at the cost of the players own pieces. Moreover, it does not take into account any strategic long-term considerations or potential future moves that may arise from its current choice. Perhaps if we made the algorithm look further ahead, some of these problems would be fixed. 
+
+\subsection*{Aggressive Algorithm (Advanced)}
+The Advanced Aggressive Algorithm attempts to fix the issues seen in the Simple Aggressive Algorithm. It does this by taking into account long-term strategic considerations, by prioritizing the reduction of opponent pieces in the longterm, rather than just in the next move alone. 
+
+We created the AdvancedAggressor algorithm which inherits the Player class. This Player is designed to make the series of d moves which capture the most pieces. Here, $d$ is an input value that the algorithm must be initialized with, and it is the number of moves that we want the Algorithm to calculate ahead, or the "depth". Advanced Aggressor is also initialized with the current CheckersGame.
+
+The move method for this player uses a more sophisticated strategy that depends on constructing a game tree and choosing the move with the highest or lowest score.
+
+We implemented the move method in the following way. First we take a CheckersGame object that represents the current state of the game. We then call gametreewithdepth on this object to create a gametree for the current state of the game, of depth equal to the depth specified in the AdvancedAggressor Player. After this we find the Aggression Score of all subtrees of the gametree we generated. We do this using a getmove method that we implement for this player, which works by calling getAggroScore on all subtrees of the generated gametree. 
+
+The function getAggroScore works by recursively assigning an aggression score to a gametree that corresponds to the average number of captures across all moves in that tree up to a certain depth. 
+
+Once this score is calculated for each subtree using the getmove method, the method finally finds the subtree with the maximum aggression score, and returns the move for this subtree. The move method for the algorithm then executes this move.
+
+Immediately, this move method looks more sophisticated than the Simple implementation for our Aggressive Strategy, because it thinks ahead. However one issue we had was that it was computationally slow. Each time we made a move, the Player would create need to recursively create a new gametree object consisting of all moves up to a certain depth based on the current state of the game. After this we would have to assign the subtrees of this gametree a AggressionScore, which is done recursively again, by checking all nodes in these subtrees.
+
+To optimize this process, we made CheckersGame an instant attribute of each GameTree. This ensured that each GameTree contained the CheckersGame which was used to create it. This helped speed up the getAggroScore method, because we needed to access the CheckersGame for every node in a gametree to check how many pieces were captured. 
+
+Additionally, we made an "update" method for the Player. This greatly reduced the computational demand. Each time the player made a move, it would need to initialize a new gametree from the current state of the board. However using this update function, after the first move, when the player makes a move, it takes the relevant subtree of the current gametree, increases its depth by 1, using the increasedepth method, and then updates the players gametree to this subtree. This means that we don't have to compute an entire new gametree each time we need to make a move.  
+
+
+Overall, this player strategy is designed to choose moves that are expected to result in the maximum number of opponent pieces being captured, based on a game tree evaluation. The depth parameter controls how many moves ahead the player considers, and a higher value leads to better evaluations but also takes longer to compute.
+\subsection*{Visualization}
+
+
+
+\newline
+
+\underline{Use of \texttt{pygame}}:
+The Pygame library plays an integral role in the visualization of our project. It is used to visualize the simulation of a full checkers game between two AIs and generate an interactive interface that allows users to pick which AIs they want to see face one another. While this already requires extensive use of Pygame, we decided to create a menu, guide and winner screen to improve the aesthetic and user experience of our program. All actions that run through Pygame represent the front-end of our program. To provide further insight as to how the program works and the process connecting the back-end and front-end, there are functions and a class that must be broken down. The simplest way to analyze the whole body of work is to break down the structure first, and then each function relative to when it is called in the code. 
+
+Thus, the visualization was structured using variables that acted as a toggle that would trigger when to draw each screen. For example, running, menu and is\_guide are examples of these types of variables which are simply Boolean values set to True when a certain window or screen must be generated. Once they are set to True, the code checks for this condition using an if statement and draws the corresponding screen for this variable being True. Since the first visualization the viewer should see is the menu, the menu variable is initially True, which causes the draw\_menu() function to be called. This function draws a background, rectangles for buttons and then it renders fonts and positions them. This was accomplished by downloading .ttf files and using .fonts which is one of the many modules of Pygame we used (which was possible due to the pygame.init() call). To make the simulation interactive we ran an event loop that tracks events that happen whilst the user is in the Pygame window. This keeps track of positions where the mouse clicks which allowed us to specify the boundaries of the button. When the event mousebuttonup was registered in these areas menu would toggle back to False, and another would become True, generating a window like draw\_guide or draw\_choose\_ai instead. These are buttons in the menu, all of which work as designed. The guide is part of the user experience and explains the important aspects of the interface to someone unfamiliar with the specifics of our implementation or the game of checkers. Then we implemented another button-like implementation with mouse events so that the user can get back to the menu without closing the window and reopening it. The exit feature works similarly. 
+
+As expected, the most significant button is the 'Play' button which uses the toggle process to draw the screen which displays the possible AI combinations that can be simulated. While we could have, and originally planned to, only simulate one intelligent algorithm to satisfy our goal of creating an artificially intelligent player, we thought it would be much more interesting to implement multiple different types of AI players. For curiosity and symmetry, we also allowed each AI combination to change piece colour. A significant connection between the front-end and back-end occurs at this point. Once the button is selected, the toggle for that button initializes the two AI it is labelled with. Then, these AI are set against each other using the run\_game function and a list of CheckersGame objects are generated. Using these, we run the draw\_boards function which calls the two most important drawing functions. These will be explained first, then the draw\_boards will appear simpler.
+
+The first of these functions is the draw\_squares function which fills a red background and then draws black squares on the even positions in each column and row. This function is the first statement in the next function, draw,  which draws a checkers board based on the CheckersGame.board attribute. This is because the draw\_squares function is responsible for drawing over the pieces of the old game state so that new pieces can be drawn on top of a blank board.
+
+The draw function is the most important function in the visualization and required extreme attention. The parameters include a screen, the same as draw\_squares, but also a game parameter that is a CheckersGame object. This game allowed us to access the game.board attribute, which as aforementioned, is a nested list in the format of a checkers board with pieces represented by IDs. By creating a nested loop to access these IDs we could access the Stone object corresponding to the ID by indexing the game.stones attribute with that ID. Once we have the Stone, we must draw it, which creates an organizational issue with separating the back-end from the front-end. Thus, we decided to implement a similar class to the Stone class, Piece, responsible for only front-end methods. The Piece class initializes the position of the Stone object and its colour, the attributes necessary to call the pygame.draw.circle built-in function. Since Piece's main purpose was to draw the stone at that ID, a method to calculate its position in the centre of a square was created, and then a method to draw the piece itself using pygame.draw.circle. Thus, for each ID in the CheckersGame.board, a corresponding piece would be drawn by extracting the back-end data from the class and implementing it with the front-end class and functions.
+
+Using these two key functions, draw\_boards, which has as a parameter a list of CheckersGame objects, loops through each individual game object and calls draw on them to draw the board for that given state. As the loop runs the game.board changes as simulated moves are made, which mimics the progression of a game.
+
+Since the board is read each column at a time, it will be drawn with the pieces perpendicular to the viewer rather than in front of them. Since it is easier to watch the game from the perspective of a player, we rotated the board 90 degrees and then updated it. As part of the visualization, we also made a half second delay per move so that the viewer has time to see what is happening, while not spending too long on each move or game. 
+
+Once this loop finishes and the simulation ends, a last screen is automatically generated. The draw\_win screen tracks the winner using the CheckersGame method get\_winner. This enabled us to create two different visuals depending on which side won the game. This signifies the end of the game and the end of the visuals.
+
+The visual aspect is critical for analyzing the differences in behaviour of the different AI. It was a challenging and rewarding aspect of the project that provides character and depth to the AI algorithms we generated, while also adding an appealing aesthetic and unique user experience.
+
+
+
+\section*{Running Our Program}
+
+Install/update \texttt{pygame} and \texttt{plotly} libraries from \texttt{requirement.txts} correctly.
+
+Ensure \texttt{font\_files} is decompressed properly into a folder with the same name and stored in the same directory as the \texttt{main.py} file to ensure the directory calls to access these fonts in the files are correct.
+
+When running \texttt{main.py}, opt for the "\textit{Run File in Python Console}" option since our prompts require inputs from the user. The user will be initially asked to prompt 'Y' or 'N'; Typing 'Y' will launch the game, while typing 'N' will request further inputs which are described below.
+
+When 'Y' is inputted, there will be a pygame window formed and presented in your dock. Locate the \texttt{PyGame} snake icon (in your dock) and press it (because the PyGame window, although it will surely open, might not pop up to you). Follow the instructions on the screen to play the game. Sometimes buttons may need \underline{double-clicking} to load the next window (usually when choosing what type of player configuration you want to see); but please be patient with the application since the algorithms are heavy and the games (which consist of 50 or more moves) take time to execute, record and draw.
+
+{\includegraphics[scale=.2]{dock.jpeg}}
+
+\newline
+
+{\includegraphics[scale=.2]{pygame_window.jpeg}}
+
+
+If 'N' is inputted \footnote{ignore the \texttt{pygame} window that might appear in the dock}, you will be able to observe plots of simulations of numerous games with different configurations of black/red players. \underline{You will be prompted to type an integer from 1 to 6} (these prompts can be observed in the screenshot attached below). 
+
+Typing any number from 1 to 5 will automatically lead to the generation of a plot of the configuration appears next to the number (as seen in the attached image). Please be patient, as this may take some time. Moreover, once the simulation has run you will see printed the percentage of the black player's wins and the percentage of the red player's wins for that particular simulation.
+
+If you type 6, you will be further prompted to input a depth of your choice (from a feasibility perspective, this should not exceed 4), as well as the number of games to run. Then, the program will automtically run a simulation (with as many games as the amount you inputted) where the black player is \texttt{PrunefulMinimaxer} operating at the depth you inputted and the red player is a Randomizer. You will see a plot of the simulation and the corresponding stats printed in the console.
+
+ {\includegraphics[scale=.2]{console_output.jpeg}}
+
+
+\textbf{Details about the Game Launcher}:
+ Our program produces an interactive display before the execution of the simulation. The primary interface is the menu screen that is generated in a \texttt{PyGame} window when the game is run. This is only generated if, after the \texttt{main.py} file is run, the user types 'Y' in response to the question and opens the \texttt{PyGame} window in their computer dock. This menu includes three options, all fairly self-explanatory. For new users, especially those who lack information on the way the simulation works, the guide is the first place to go and is likely a helpful feature. It can be simply selected using a cursor, which creates a new screen outlining the game of checkers and the way our simulation works. This was implemented to help all users traverse the simulation and familiarize them with the fundamentals of checkers itself. Once the user is finished reading the text in the guide, they can press the bottom line/button of the guide which will send them back to the menu so they do not have to close their window to actually start a game. Unless a user wants to leave, for which they can use the exit button, they will select the play button with their cursor next. This will take them to another screen that allows them to select which AI combination they would like to simulate and what what the configuration should be (e.g. black is \texttt{Pruneful Maximizer} and red is \texttt{Randomizer} or any other configuration). Once they have selected the button with their mouse, they can wait a few seconds and the game will begin and execute smoothly. Once the game is finished, a "win screen" will be generated, signifying the end of the simulation, at which point the user can exit the PyGame window at their own discretion. As you will be able to see, the AI's always win against a \texttt{Randomizer}!
+
+\section*{Changes to Project Plan}
+
+One of the major changes between our project plan and proposal was changing from a playable checkers game to a simulation. While we originally planned for a person to be able to select a piece with their cursor and make a move themselves, we decided to switch to a simulation to focus more on making and improving our AI algorithms. While it would have been interesting, we were having difficulties with selecting and moving pieces around. It also seemed that the project would have been hyper-focused on the user interface aspect opposed to the back-end algorithms which were our priority. There were a number of difficulties that implementation posed all around, which is why we decided to focus on creating a simulation. For this reason, we focused on generating and improving our AIs more than originally intended.
+
+Moreover, during the creation of the game we made a couple simplifying assumptions. We acknowledge the differences between traditional checkers and our simulation in the guide so that users are not confused when they do not see a piece become a king. While we originally intended to include this aspect in the game, a piece that could move in four different directions made the computation for the number of possible moves and future moves too large. Including this condition would have likely drastically increased the time it takes for the simulation to run. Additionally, we made the simplifying assumption that if a piece is capturing more than one piece it cannot change direction while capturing (as explained earlier). This is because it was too difficult to track the moves on either side of an opposing piece for each piece on the board. Again, this likely would have caused some computational difficulties and increased the amount of time and lag for the program.
+
+\section*{Discussion}
+
+After several weeks of consistent work, the results are very promising, but getting to these results was not an easy road and we faced multiple challenges along the way. We will begin by discussing some of those challenges.
+
+\subsection*{Limitations/Challenges}
+
+Mutation of \texttt{Stone.position} in \texttt{CheckersGame.record\_move}:
+
+In our initial implementation of record\_move we came across an issue that posed a great challenge to us, but the lesson we learned was very important;
+initially, in our \texttt{record\_move} implementation, we had an assignment statement that mutated the moving stone's position to be the new position given by the move and then added the move to the \texttt{black\_history} and \texttt{red\_history} accordingly. We thought this implementation was right and would not cause any issues and it even passed our first round of testing inputs. However, an issue arose when we attempted to draw games using the \texttt{draw\_boards} function which depended heavily on \texttt{CheckersGame.record\_move}. After several hours of debugging and testing, we recognized our error; the mutation to the moving stones' position was causing the problem. This is because the \texttt{Move} class has two attributes;  the Stone and the \texttt{new\_position}, and the \texttt{Stone} class has a \texttt{position} attribute that stores the position of the stone. When we mutate a stone's position to become the new position after recording a move, then the stone "loses" its initial position, which causes problems when trying to draw game boards because we want the stone to go from its initial position to the next one, and not from the position it ended up at the end of the game. 
+To explain with an example, let's say we are following the black stone with \texttt{ID = 10}. Assume that this stone in the end has reached position \texttt{(4,7)}. With our initial implementation of \texttt{record\_move} we would be adding all of the moves that stone 10 made into black\_history which would then contain a list of Moves. But since after all the mutations of \texttt{Stone.position}, the black stone 10's position ends up as \texttt{(4,7)}. So if stone 10's first move was to go to \texttt{(7,3)}, this would mean that in \texttt{black\_history} a \texttt{Move} would be stored to move stone 10 to that position, but since the final position of stone 10 is (4,7) the \underline{\texttt{Move} stored in black\_history is attempting to move stone 10 from \texttt{(4,7)} to \texttt{(7,3)}}, which is an invalid move,  thus causing the game boards to be erroneous. This error is similar to the concepts discussed in "Mutation at a distance" and posed an interesting challenge to us.
+We ended up resolving this error by using \texttt{copy.deepcopy()} which is briefly explained on page 2. \texttt{copy.deepcopy(move)}, where move is a \texttt{Move} object, would return a new \texttt{Move} object, and all the attribute of that \texttt{Move} object will also be new objects (i.e. they will not be aliases with the attributes of the other \texttt{Move} object).
+
+
+
+
+
+
+
+\subsection*{Minimax Algorithm}
+As noted above, we implemented three players for the Minimax decision tree algorithm, with each player utilizing a (different) version of Minimax; \texttt{PrunelessMinimaxerWithTree}, \texttt{PrunelessMinimaxer}, \texttt{PrunefulMinimaxer}. However, for a given depth $d$, all these algorithms are equally effective since the strategy used to assign scores and select amongst the possible moves is the same. What differs is the running time efficiency. The slowest is that \texttt{PrunelessMinimaxerWithTree}, since for every node it creates a tree. The second slowest is the \texttt{PrunelessMinimaxer}, and the fastest of all is the \texttt{PrunelfulMinimaxer}, which is very efficient because it performs alpha-beta pruning, avoiding recursion on subtrees that we know for certain will not contribute to our score assignment.
+
+We decided to run numerous simulations of Checkers games with the black player and red player taking various roles, for different depths (we did this using the \texttt{run\_games\_plot} function from the \texttt{simulation.py} module.
+
+Thankfully, the Minimax players perform extremely well against a random player (the \texttt{Randomizer}, who chooses completely randomly amongst all possible moves for a given state and turn), typically winning against a random player almost $100\%$ of the time! 
+
+The below visual is the result of a simulation of $500$ complete Checkers games where the black player is the \texttt{PrunefulMinimaxer} algorithm with depth $2$, and the red player is a \texttt{Randomizer}. This plot shows that the Minimax algorithm won a staggering $98.8\%$ of the time!
+
+
+\includegraphics[scale=.4]{Pruneful_Randomizer_500.png}
+
+The following result shows that this is also the case if the black player is a \texttt{Randomizer} and the red player is a \texttt{PrunefulMinimaxer} (rather than the other way around), with teh \texttt{PrunefulMinimaxer} (who is now red) winning $100\%$ of the time!
+
+\includegraphics[scale=.4]{Randomizer_Pruneful_500.png}
+
+Furthermore, \texttt{PrunefulMinimaxer} also seems to perform better than \texttt{AdvancedAggressor}. This is clear from the simulation of 50 games with the black player being the \texttt{PrunefulMinimaxer} and the red player being the \texttt{AdvancedAggressor}, both with depth 2, and another simulation of 50 games but with the players in the opposite order (again both with depth 2). The results of both simulations are attached below. When \texttt{PrunefulMinimaxer} was the black player, he won $94\%$ of the time, and when he was the red player, he won $100\%$ of the time.
+
+
+\includegraphics[scale=.4]{Pruneful_Aggressor_50.png}
+
+
+What is truly significant is that these results (that showed the unarguable dominance of the Minimaxer) is that the \texttt{PrunefulMinimaxer} operated with only a depth of 2. In a live game, the \texttt{PrunefulMinimaxer} (which is the most efficient of all three) can play with a depth of 5 and still be within the time limit making a play. It is difficult to imagine the power of a \texttt{PrunefulMinimaxer} operating with depth 5.
+
+Another crucial note to keep in mind is the dependence of the Minimax algorithm (for all three of the implementations) on our utility function. Choosing another utility function could drastically change the results and the decision-making behavior of our algorithms. Ideally, \textit{the utility (or "static evaluation") function should be a measure of the proximity of a state to a winning state}. Although we tried to implement our current utility function with this consideration, there is lots of room for improvement, and here are some potential further steps. In a future version of the project, we could "improve" (again, we do not know what this word actually means for our context) our utility function by taking into account more information about the state of the game. But this comes with another discussion point; right now, the utility function runs in linear time because for a given states, it calculates the average position of each black piece (to see how close Black is to the other side). Maybe we could change the implementation of the \texttt{CheckersGame} class to include such a number (and other quantities we may want to use in the utility function) as an attribute, so accessing it will take constant time, like \texttt{len}.
+
+\subsection*{Aggressive Algorithm}:
+Making a simulation with the Simple Aggressive player as that black player and a Randomizer as the red player, we immediately see that the Simple Aggressive Algorithm was much better than a Player who made Random moves.
+
+\includegraphics[scale=.4]{SIMPAGG VS RAND.png}
+
+However, when we compared the Simple Aggressive Algorithm with the Advanced Aggressive player, we noticed that the Advanced Counterpart performed much better, even when it looked just two moves ahead. Before optimization of the Advanced Aggressive algorithm, it took us 5 minutes to compute 30 games. After optimization, it took us around a minute. Part of this optimization included recursing down the tree once instead of twice (as initially we recursed both to assign moves to the nodes and then recursed again to assign scores). 
+
+\includegraphics[scale=.4]{SIMPAGG VS ADVAGG.png}
+
+This shows us that the "Aggressive" Strategy worked far better when we looked ahead. Finally, we compared the Simple Aggressor Algorithm against the Minimax Strategy:
+
+\includegraphics[scale=.4]{SIMPAGG VS PRUNEFUL.png}
+
+The Minimax strategy clearly completely outperformed the Simple Aggressive Strategy, beating it every time. This sheds light on some of the flaws in the Aggression Strategy. Although capturing the most pieces may seem valuable in the short run, in the long run, the most aggressive moves can put us in bad positions in the future, which will lead to us losing the game. On the other hand, the Minimax strategy more holistically assigns scores to moves, by looking ahead and using a more complicated utility function that values winning the game over anything else. 
+
+\subsection*{Advanced Aggressive Algorithm}
+This implementation of the Aggressive Strategy fixed some of the issues with the simpler counterpart. It allows for more long-term thinking, making moves that would capture more pieces down the line, rather than in the short term. We already saw that it outperforms the Simple Aggressive Player, so we decided to compare how two advanced Aggressive Players, one of depth 2, and the other of depth 3 performed against one another.
+
+\includegraphics[scale=.4]{ADVAGG(2) VS ADVAGG(3).png}
+
+As shown in the plot above, the Advanced Aggressive Player of depth 3 won $70\%$ of the time against the same Player but with depth 2. This highlights how important the depth of the Player is, as by just increasing this value by 1, we get a significantly better algorithm. During our implementation of this algorithm, it was interesting to see how important optimization was in our computations. Before the computations outlined in the Advanced Aggressive Algorithm description, computing games with depth 3 and 4 were essentially unfeasible. However after these optimizations, we were able to compute many games at these depths in 5 minutes or less.  
+
+To conclude, both artificial intelligence tree-based algorithms we implemented, \texttt{AdvancedAgressor} and \texttt{PrunefulMinimaxer} win against a \texttt{Randomizer} almost $100\%$ of the time, with the \texttt{PrunefulMinimaxer} seemingly outperforming \texttt{AdvancedAgressor}.
+
+\section*{References}
+
+Haussmann, Aden. “Build an Unbeatable Board Game AI.” Medium, Towards Data Science, 31 Mar. 2021, https://towardsdatascience.com/build-an-unbeatable-board-game-ai-68719308a17. 
+
+
+Srinivasan, Aishwarya. “The First of Its Kind AI Model- Samuel's Checkers Playing Program.” Medium, IBM Data Science in Practice, 4 Dec. 2020, https://medium.com/ibm-data-ai/the-first-of-its-kind-ai-model-samuels-checkers-playing-program-1b712fa4ab96. 
+
+
+Foster, David. “How to Build Your Own Ai to Play Any Board Game.” Medium, Applied Data Science, 4 Feb. 2021, https://medium.com/applied-data-science/how-to-train-ai-agents-to-play-multiplayer-games-using-self-play-deep-reinforcement-learning-247d0b440717. 
+
+
+Madrigal, Alexis C. “How Checkers Was Solved.” The Atlantic, Atlantic Media Company, 19 July 2017, https://www.theatlantic.com/technology/archive/2017/07/marion-tinsley-checkers/534111/. 
+
+Pygame front page. Pygame Front Page - pygame v2.4.0 documentation. (n.d.). Retrieved from https://www.pygame.org/docs/ 
+
+“What Is the Minimax Algorithm? - Artificial Intelligence.” YouTube, YouTube, 6 Mar. 2017, https://www.youtube.com/watch?v=KU9Ch59-4vw. 
+
+Eppes, Marissa. “How a Computerized Shess Opponent ‘Thinks’ - the Minimax Algorithm.” Medium, Towards Data Science, 6 Oct. 2019, https\:\/\/medium.com\/towards-data-science\/how-a-chess-playing-computer-thinks-about-its-next-move. 
+
+Lazar, Dorian. “Understanding the Minimax Algorithm.” Medium, Towards Data Science, 14 May 2021, https://towardsdatascience.com/understanding-the-minimax-algorithm-726582e4f2c6. 
+
+% NOTE: LaTeX does have a built-in way of generating references automatically,
+% but it's a bit tricky to use so we STRONGLY recommend writing your references
+% manually, using a standard academic format like APA or MLA.
+% (E.g., https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/general_format.html)
+
+\end{document}
