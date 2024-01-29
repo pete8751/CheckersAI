@@ -8,6 +8,7 @@ Copyright and Usage Information
 ===============================
 This file is Copyright (c) 2023 Samarth Sharma, Lakshman Nair, Peter James, and Mimis Chlympatsos.
 """
+
 from visual import *
 from simulation import run_games_plot
 
