@@ -29,6 +29,3 @@ Tools:
 - Pygame
 
 ===========================================================================
-
-TODO: 
-1. Create an exe file for this project.
