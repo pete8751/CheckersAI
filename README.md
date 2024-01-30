@@ -11,7 +11,7 @@ I also ported this application to the web, using the pygbag python package.
 
 You can play the simulation now! https://pete8751.github.io/CheckersAI/
 
-For information about how the algorithms were implemented, and for data about which algorithms were the best after testing,
+For information about how the algorithms were implemented, and for our research about which algorithms were the best after testing,
 please see the project proposal pdf in the checkersproj folder. This pdf is also displayed on the app website.
 
 ===========================================================================
