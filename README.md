@@ -27,6 +27,7 @@ To run the visualizer, run the 'visual.py' file. This will visualize the games b
 Simulator:
 To run the simulator, run the 'main.py' file. This will prompt you to choose two algorithms, and will then simulate 100 games between
 these algorithms, and return a win/loss percentage, as well as a graph of statistics. You can change the number of games simulated.
+To simulate more than 100 games, simply edit the games variable in the simulator file to the desired number.
 
 ===========================================================================
 
