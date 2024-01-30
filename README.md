@@ -6,9 +6,11 @@
 
 This project is a checkers simulator that allows users to choose between various automated Checkers algorithms, and to watch how their chosen strategy performs against others. The algorithms currently implemented include the MinMax algorithm (with and without pruning), The "Aggressive" Algorithm (optimizes for pieces captured), and the random algorithm. All of these are tree based AI algorithms apart from the random algorithm. The AI algorithm starts with an empty tree, but extends its tree the more games it plays, learning which moves end badly, and which are more favorable. 
 
+You can play the simulation now https://pete8751.github.io/CheckersAI/!
+
 ===========================================================================
 
-Run Instructions:
+Run Instructions (Downloaded Version):
 
 To run this application, you must first clone this repo to your system.
 
