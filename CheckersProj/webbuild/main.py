@@ -315,11 +315,11 @@ async def games() -> None:
                 quit()
 
             # Triggering guide button
-            if is_guide:
-                draw_guide()
-                is_guide = False
-                menu = True
-                pygame.display.flip()
+            # if is_guide:
+            #     draw_guide()
+            #     # is_guide = False
+            #     # menu = True
+            #     pygame.display.flip()
 
             if menu:
                 draw_menu()
@@ -338,11 +338,11 @@ async def games() -> None:
                     if mx > 185 and mx < 185 + 400 and my > 305 and my < 305 + 90:
                         play_game = True
                         menu = False
-                    if mx > 155 and mx < 155 + 390 and my > 430 and my < 430 + 90:
-                        is_guide = True
-                        menu = False
-                    if mx > 155 and mx < 155 + 390 and my > 555 and my < 555 + 90:
-                        quitGame = True
+                    # if mx > 155 and mx < 155 + 390 and my > 430 and my < 430 + 90:
+                    #     is_guide = True
+                    #     menu = False
+                    # if mx > 155 and mx < 155 + 390 and my > 555 and my < 555 + 90:
+                    #     quitGame = True
                     continue
 
                 if final_menu:
