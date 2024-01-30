@@ -59,7 +59,6 @@ def run_game(black_player: Player, red_player: Player) -> (CheckersGame, str):
     - (black_player.color == 'R' and black_player.color == 'Y') or \
         (black_player.color == 'R' and black_player.color == 'Y')
     """
-    print("entered")
     game = CheckersGame()
 
     while game.get_winner() is None:
@@ -195,7 +194,6 @@ def draw_choose_AI() -> None:
 def draw_squares(screen: pygame.Surface) -> None:
     """A function that draws the gameboard by filling the screen with red and drawing black squares in every other
     position in each row and column."""
-    print("drawn")
     screen.fill(RED)
     for row in range(ROWS):
         for col in range(row % 2, COLS, 2):
@@ -286,10 +284,15 @@ def draw_win(game: CheckersGame) -> None:
     screen.blit(win_caption, pygame.Rect(55, 350, 50, 20))
     win_caption_2 = font_two.render('We encourage you to run through each AI!', True, YELLOW)
     screen.blit(win_caption_2, pygame.Rect(50, 450, 50, 20))
-    win_caption3 = font_two.render('You may close this window whenever you', True, YELLOW)
-    screen.blit(win_caption3, pygame.Rect(60, 550, 50, 20))
-    win_caption4 = font_two.render('are ready.', True, YELLOW)
-    screen.blit(win_caption4, pygame.Rect(325, 650, 50, 20))
+    # win_caption3 = font_two.render('You may close this window whenever you', True, YELLOW)
+    # screen.blit(win_caption3, pygame.Rect(60, 550, 50, 20))
+    # win_caption4 = font_two.render('are ready.', True, YELLOW)
+    # screen.blit(win_caption4, pygame.Rect(325, 650, 50, 20))
+
+    pygame.draw.rect(screen, WHITE, (185, 550, 450, 100))
+    pygame.draw.rect(screen, BLACK, (190, 555, 440, 90))
+    restart = font_three.render('PLAY AGAIN', True, RED)
+    screen.blit(restart, pygame.Rect(200, 565, 50, 20))
 
 # Main game loop function
 async def games() -> None:
@@ -299,18 +302,10 @@ async def games() -> None:
     # Defining variables to trigger different actions
     menu = True
     play_game = False
+    final_menu = False
     is_guide = False
     quitGame = False
     running = True
-
-    a1 = False
-    a2 = False
-    a3 = False
-    a4 = False
-    a5 = False
-    a6 = False
-    a7 = False
-    a8 = False
 
     while running:
 
@@ -322,20 +317,24 @@ async def games() -> None:
             # Triggering guide button
             if is_guide:
                 draw_guide()
-                if evnt.type == pygame.MOUSEBUTTONDOWN:
-                    is_guide = False
-                    menu = True
-                    pygame.display.flip()
+                is_guide = False
+                menu = True
+                pygame.display.flip()
 
-            # Triggering the menu screen
             if menu:
                 draw_menu()
                 pygame.display.flip()
 
-                # Check if mouse clicks on button positions
-                if evnt.type == pygame.MOUSEBUTTONUP:
-                    print("click")
-                    mx, my = evnt.pos
+            if play_game:
+                draw_choose_AI()
+                pygame.display.flip()
+
+            if evnt.type == pygame.MOUSEBUTTONDOWN and evnt.button == 1:
+                mx, my = evnt.pos
+
+                # Triggering the menu screen
+                if menu:
+                    # Check if mouse clicks on button positions
                     if mx > 185 and mx < 185 + 400 and my > 305 and my < 305 + 90:
                         play_game = True
                         menu = False
@@ -344,127 +343,145 @@ async def games() -> None:
                         menu = False
                     if mx > 155 and mx < 155 + 390 and my > 555 and my < 555 + 90:
                         quitGame = True
+                    continue
 
-            if play_game:
-                draw_choose_AI()
-                pygame.display.flip()
+                if final_menu:
+                    if 185 < mx < 635:
+                        if 550 < my < 650:
+                            play_game = True
+                            final_menu = False
+                    continue
 
-                if evnt.type == pygame.MOUSEBUTTONUP:
-                    print("click")
-                    m_x, m_y = evnt.pos
+                if play_game:
 
-                    if 45 < m_x < 395:
-                        if 250 < m_y < 350:
+                    a1 = False
+                    a2 = False
+                    a3 = False
+                    a4 = False
+                    a5 = False
+                    a6 = False
+                    a7 = False
+                    a8 = False
+
+                    if 45 < mx < 395:
+                        if 250 < my < 350:
                             a1 = True
-                        if 380 < m_y < 480:
+                        if 380 < my < 480:
                             a2 = True
-                        if 510 < m_y < 610:
+                        if 510 < my < 610:
                             a3 = True
-                        if 640 < m_y < 740:
+                        if 640 < my < 740:
                             a4 = True
-                    if 400 < m_x < 750:
+                    if 400 < mx < 750:
 
-                        if 250 < m_y < 350:
+                        if 250 < my < 350:
                             a5 = True
-                        if 380 < m_y < 480:
+                        if 380 < my < 480:
                             a6 = True
-                        if 510 < m_y < 610:
+                        if 510 < my < 610:
                             a7 = True
-                        if 640 < m_y < 740:
+                        if 640 < my < 740:
                             a8 = True
 
-                if a1:
-                    print("chosen")
-                    prun = PrunelessMinimaxer(3)
-                    rando = Randomizer()
-                    existing_game, winner = run_game(prun, rando)
-                    create_game = CheckersGame()
-                    moves = existing_game.get_moves()
-                    game_states = game_state_generator(moves, create_game)
-                    await draw_boards(game_states)
-                    play_game = False
-                    draw_win(existing_game)
+                    if a1:
+                        prun = PrunelessMinimaxer(3)
+                        rando = Randomizer()
+                        existing_game, winner = run_game(prun, rando)
+                        create_game = CheckersGame()
+                        moves = existing_game.get_moves()
+                        game_states = game_state_generator(moves, create_game)
+                        await draw_boards(game_states)
+                        play_game = False
+                        final_menu = True
+                        draw_win(existing_game)
 
-                if a2:
-                    print("chosen")
-                    prun = PrunefulMinimaxer(3)
-                    random1 = Randomizer()
-                    existing_game, winner = run_game(prun, random1)
-                    create_game = CheckersGame()
-                    moves = existing_game.get_moves()
-                    game_states = game_state_generator(moves, create_game)
-                    await draw_boards(game_states)
-                    play_game = False
-                    draw_win(existing_game)
+                    if a2:
+                        prun = PrunefulMinimaxer(3)
+                        random1 = Randomizer()
+                        existing_game, winner = run_game(prun, random1)
+                        create_game = CheckersGame()
+                        moves = existing_game.get_moves()
+                        game_states = game_state_generator(moves, create_game)
+                        await draw_boards(game_states)
+                        play_game = False
+                        final_menu = True
+                        draw_win(existing_game)
 
-                if a3:
-                    prunful = PrunefulMinimaxer(3)
-                    prunless = PrunelessMinimaxer(3)
-                    existing_game, winner = run_game(prunful, prunless)
-                    create_game = CheckersGame()
-                    moves = existing_game.get_moves()
-                    game_states = game_state_generator(moves, create_game)
-                    draw_boards(game_states)
-                    play_game = False
-                    draw_win(existing_game)
+                    if a3:
+                        prunful = PrunefulMinimaxer(3)
+                        prunless = PrunelessMinimaxer(3)
+                        existing_game, winner = run_game(prunful, prunless)
+                        create_game = CheckersGame()
+                        moves = existing_game.get_moves()
+                        game_states = game_state_generator(moves, create_game)
+                        await draw_boards(game_states)
+                        play_game = False
+                        final_menu = True
+                        draw_win(existing_game)
 
-                if a4:
-                    prunful = PrunefulMinimaxer(3)
-                    agress = AdvancedAggressor('R', 3)
-                    existing_game, winner = run_game(prunful, agress)
-                    create_game = CheckersGame()
-                    moves = existing_game.get_moves()
-                    game_states = game_state_generator(moves, create_game)
-                    draw_boards(game_states)
-                    play_game = False
-                    draw_win(existing_game)
+                    if a4:
+                        prunful = PrunefulMinimaxer(3)
+                        agress = AdvancedAggressor('R', 3)
+                        existing_game, winner = run_game(prunful, agress)
+                        create_game = CheckersGame()
+                        moves = existing_game.get_moves()
+                        game_states = game_state_generator(moves, create_game)
+                        await draw_boards(game_states)
+                        play_game = False
+                        final_menu = True
+                        draw_win(existing_game)
 
-                if a5:
-                    prun = PrunelessMinimaxer(3)
-                    rando = Randomizer()
-                    existing_game, winner = run_game(rando, prun)
-                    create_game = CheckersGame()
-                    moves = existing_game.get_moves()
-                    game_states = game_state_generator(moves, create_game)
-                    draw_boards(game_states)
-                    play_game = False
-                    draw_win(existing_game)
+                    if a5:
+                        prun = PrunelessMinimaxer(3)
+                        rando = Randomizer()
+                        existing_game, winner = run_game(rando, prun)
+                        create_game = CheckersGame()
+                        moves = existing_game.get_moves()
+                        game_states = game_state_generator(moves, create_game)
+                        await draw_boards(game_states)
+                        play_game = False
+                        final_menu = True
+                        draw_win(existing_game)
 
-                if a6:
-                    print('**********************************************')
-                    prun = PrunefulMinimaxer(3)
-                    random1 = Randomizer()
-                    existing_game, winner = run_game(random1, prun)
-                    create_game = CheckersGame()
-                    moves = existing_game.get_moves()
-                    game_states = game_state_generator(moves, create_game)
-                    draw_boards(game_states)
-                    play_game = False
-                    draw_win(existing_game)
+                    if a6:
+                        print('**********************************************')
+                        prun = PrunefulMinimaxer(3)
+                        random1 = Randomizer()
+                        existing_game, winner = run_game(random1, prun)
+                        create_game = CheckersGame()
+                        moves = existing_game.get_moves()
+                        game_states = game_state_generator(moves, create_game)
+                        await draw_boards(game_states)
+                        play_game = False
+                        final_menu = True
+                        draw_win(existing_game)
 
-                if a7:
-                    prunful = PrunefulMinimaxer(3)
-                    prunless = PrunelessMinimaxer(3)
-                    existing_game, winner = run_game(prunless, prunful)
-                    create_game = CheckersGame()
-                    moves = existing_game.get_moves()
-                    game_states = game_state_generator(moves, create_game)
-                    draw_boards(game_states)
-                    play_game = False
-                    draw_win(existing_game)
+                    if a7:
+                        prunful = PrunefulMinimaxer(3)
+                        prunless = PrunelessMinimaxer(3)
+                        existing_game, winner = run_game(prunless, prunful)
+                        create_game = CheckersGame()
+                        moves = existing_game.get_moves()
+                        game_states = game_state_generator(moves, create_game)
+                        await draw_boards(game_states)
+                        play_game = False
+                        final_menu = True
+                        draw_win(existing_game)
 
-                if a8:
-                    prunful = PrunefulMinimaxer(3)
-                    agress = AdvancedAggressor('B', 3)
-                    existing_game, winner = run_game(agress, prunful)
-                    create_game = CheckersGame()
-                    moves = existing_game.get_moves()
-                    game_states = game_state_generator(moves, create_game)
-                    draw_boards(game_states)
-                    play_game = False
-                    draw_win(existing_game)
+                    if a8:
+                        prunful = PrunefulMinimaxer(3)
+                        agress = AdvancedAggressor('B', 3)
+                        existing_game, winner = run_game(agress, prunful)
+                        create_game = CheckersGame()
+                        moves = existing_game.get_moves()
+                        game_states = game_state_generator(moves, create_game)
+                        await draw_boards(game_states)
+                        play_game = False
+                        final_menu = True
+                        draw_win(existing_game)
 
-                pygame.display.flip()
+                    pygame.display.flip()
+
 
         # Triggering exit button
         if quitGame:
