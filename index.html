@@ -201,7 +201,6 @@ asyncio.run( custom_site() )
 
 
 
-
 # BEGIN BLOCK
 #
 # now this is the html part you can (and should) customize
@@ -265,6 +264,8 @@ config = {
     <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
 
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,100&family=Press+Start+2P&display=swap');
+
         #status {
             display: inline-block;
             vertical-align: top;
@@ -288,8 +289,8 @@ config = {
         canvas.emscripten {
             border: 0px none;
             background-color: powderblue;
-            max-width: 75vw;
-            max-height: 75vh;
+            max-width: 70%;
+            max-height: 70%;
             width: 100%;
             height: 100%;
 
@@ -310,20 +311,26 @@ config = {
             align-items: center;
             margin: 0;
             padding: none;
-            background-color:beige;
+            background-color:beige !important;
         }
 
         .header{
-            height: 50px;
+            line-height: 100px;
+            text-align: center;
+            height: 100px;
+            font-family: 'Press Start 2P', system-ui;
         }
 
         .description{
+            font-family: 'Poppins', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             height: fit-content;
-            width: 75%;
+            max-width: max(50vw, 550px);
             margin: auto;
+            padding-top: 20px;
+            padding-bottom: 20px;
         }
 
         .pdf{
@@ -331,18 +338,14 @@ config = {
             flex-direction: column;
             align-items: center;
             height: 100%;
-            width: 75%;
+            padding-bottom: 30px;
+            width: min(75%, 1000px);
             margin: auto;
         }
 
         .pdfobj{
             width: 100%;
             height: 100%;
-        }
-
-        .footer{
-            height: 100px;
-            width: 100%;
         }
 
         .topright{
@@ -378,6 +381,64 @@ config = {
         
         .toggle_documentation {
             padding-bottom: 20px;
+        }
+
+        .details-container{
+            max-width: 1170px;
+            /* background-color: red; */
+            margin: auto;
+        }
+
+        .fa-brands {
+            font-size: 2em;
+        }
+
+        .footer {
+            width: 100%;
+            display: flex;
+            background-color: transparent;
+            padding-bottom: 15px;
+        }
+
+        .footer-col{
+            width: 25%;
+            padding: 0 15px;
+        }   
+
+        .footer-col .socials a{
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+            width: 40px;
+            background-color: rgba(255, 255, 255, 0.2);
+            margin: 0 10px 10px 0;
+            text-align: center;
+            line-height: 40px;
+            border-radius: 50%;
+            color: black;
+            transition: all 0.5s ease;
+        }
+
+        .footer-col .socials a:hover{
+            color: #D1493D;
+            background-color: #444;
+        }
+
+
+        @media(max-width: 767px){
+            .footer-col {
+                width: 50%;
+                margin-bottom: 30px;
+            }
+        }
+
+        @media(max-width: 574px){
+            .footer-col {
+                width: 100%;
+                margin-bottom: 30px;
+            }
         }
 
         /* variables */
@@ -480,9 +541,9 @@ config = {
         }
 
     </style>
-
+    <script src="https://kit.fontawesome.com/269b861063.js" crossorigin="anonymous"></script>
     <script src="https://pygame-web.github.io/archives/0.8//browserfs.min.js"></script>
-
+    
 </head>
 
 <body>
@@ -494,7 +555,7 @@ config = {
             <progress value="0" max="100" id="progress"></progress>
         </div>
     </div>
-    <div class="header"></div>
+    <div class="header">Check Your Move!</div>
     
     <div class="toggle_documentation"><ul class="radio-switch ">
   <li class="radio-switch__item">
@@ -519,15 +580,30 @@ height="1px"
         <p>The Guide and Exit buttons have been disabled on the web version</p>
         <p>To watch a checkers simulation, simply click play, and then choose the 
             algorithms you want to watch compete. The algorithm listed first plays black.
-            There will be a loading time after choosing an algorithm pair.
+            There will be a loading time after choosing an algorithm pair due to web throttling.
             Please try not to click too fast, as too many inputs might cause issues with the 
             inline web display. To use the program without throttling, and access features 
             including simulating 100s of games at once, download the repository, and run the 
-            main.py file.</p>
+            main.py file.<p>
+        </p>For information on how algorithms operate, and are implemented, please see pages 4 - 5 of the Documentation
+            on the other page.</p>
     </div>
     <div class="pdf" style="display: none;">
         <object class="pdfobj" data="./CheckersProj/project_proposal.pdf" type="application/pdf"></object></div>
-    <div class="footer"></div>
+
+    <div class="footer">
+        <div class="details-container">
+          <div class="row">
+            <div class="footer-col">
+              <div class="socials">
+                <a href="https://github.com/pete8751" target="_blank"
+                  ><i class="fa-brands fa-github"></i
+                ></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     <div id=html></div>
 
     <div id=crt  class=bottomright >
